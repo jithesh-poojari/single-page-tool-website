@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Tracker</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      .job-input {
+        margin-bottom: 20px;
+      }
+      .job-input input,
+      .job-input select {
+        padding: 10px;
+        margin-right: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 1em;
+      }
+      .job-input button {
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .job-input button:hover {
+        background-color: #0056b3;
+      }
+      .job-list {
+        margin-top: 20px;
+      }
+      .job {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+      }
+      .job h3 {
+        margin: 0;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+      }
+      .checkbox-group {
+        display: flex;
+        gap: 10px;
+      }
+      .checkbox-group label {
+        display: flex;
+        align-items: center;
+        font-size: 0.9em;
+        gap: 5px;
+      }
+      .checkbox-group label.pending {
+        background-color: #ffeb3b;
+        padding: 5px;
+        border-radius: 5px;
+      }
+      .generate-report {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Job Tracker</h1>
+    <div class="job-input">
+      <select id="customer-select">
+        <option value="" disabled selected>Select Customer</option>
+      </select>
+      <input type="text" id="job-name" placeholder="Enter Job Name" />
+      <button id="add-job">Add Job</button>
+      <button id="generate-report">Generate Excel Report</button>
+    </div>
+    <h2>Live Jobs</h2>
+    <div id="job-list" class="job-list"></div>
+
+    <script>
+      const customers = ["TATA AIA", "CSB", "UJJIVAN"];
+
+      function populateCustomerOptions() {
+        const customerSelect = document.getElementById("customer-select");
+        customers.forEach((customer) => {
+          const option = document.createElement("option");
+          option.value = customer;
+          option.textContent = customer;
+          customerSelect.appendChild(option);
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        populateCustomerOptions();
+      });
+
+      const dbName = "JobTrackerDB";
+      const storeName = "Jobs";
+      const states = [
+        "CR Received",
+        "CR Shared",
+        "Sample Received",
+        "Sample Shared",
+        "Print File Received",
+        "Print File Shared",
+      ];
+      let db;
+
+      const openDB = async () => {
+        const request = indexedDB.open(dbName, 1);
+
+        request.onerror = (event) => {
+          console.error("Database error:", event.target.error);
+        };
+
+        request.onsuccess = (event) => {
+          db = event.target.result;
+          loadJobs();
+        };
+
+        request.onupgradeneeded = (event) => {
+          db = event.target.result;
+          db.createObjectStore(storeName, {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+        };
+
+        request.onblocked = (event) => {
+          console.error("Database version blocked:", event.target.error);
+        };
+
+        request.onupgradeneeded = (event) => {
+          db = event.target.result;
+          db.close();
+        };
+      };
+
+      function saveJob(job) {
+        const transaction = db.transaction([storeName], "readwrite");
+        const store = transaction.objectStore(storeName);
+        store.put(job);
+      }
+
+      function loadJobs() {
+        const transaction = db.transaction([storeName], "readonly");
+        const store = transaction.objectStore(storeName);
+        const request = store.getAll();
+
+        request.onsuccess = (event) => {
+          const jobs = event.target.result;
+          jobs
+            .filter((job) => job.status === "open")
+            .forEach((job) => {
+              renderJob(job);
+            });
+        };
+      }
+
+      function renderJob(job) {
+        const jobDiv = document.createElement("div");
+        jobDiv.className = "job";
+        jobDiv.id = `job-${job.id}`;
+
+        const title = document.createElement("h3");
+        title.textContent = `${job.customer} - ${job.name}`;
+        jobDiv.appendChild(title);
+
+        const checkboxGroup = document.createElement("div");
+        checkboxGroup.className = "checkbox-group";
+
+        states.forEach((state, index) => {
+          const label = document.createElement("label");
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.dataset.index = index;
+          checkbox.checked = job.states[index] || false;
+
+          label.classList.toggle("pending", !job.states[index]);
+
+          checkbox.addEventListener("change", (e) => {
+            const confirmed = confirm(
+              e.target.checked
+                ? `Do you want to mark "${state}" as complete?`
+                : `Do you want to unmark "${state}"?`
+            );
+
+            if (!confirmed) {
+              e.target.checked = !e.target.checked;
+              return;
+            }
+
+            const checkboxes = Array.from(
+              checkboxGroup.querySelectorAll("input[type='checkbox']")
+            );
+            const currentIndex = parseInt(e.target.dataset.index, 10);
+
+            checkboxes.forEach((box, idx) => {
+              if (idx <= currentIndex && e.target.checked) {
+                box.checked = true;
+                job.states[idx] = true;
+              } else if (idx > currentIndex && !e.target.checked) {
+                box.checked = false;
+                job.states[idx] = false;
+              }
+            });
+
+            saveJob(job);
+            highlightPendingState(checkboxGroup);
+
+            if (job.states.every((state) => state)) {
+              setTimeout(() => {
+                if (confirm(`Mark job "${job.name}" as closed?`)) {
+                  job.status = "closed";
+                  saveJob(job);
+                  jobDiv.remove();
+                }
+              }, 0);
+            }
+          });
+
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode(state));
+          checkboxGroup.appendChild(label);
+        });
+
+        jobDiv.appendChild(checkboxGroup);
+        document.getElementById("job-list").appendChild(jobDiv);
+
+        highlightPendingState(checkboxGroup);
+      }
+
+      function highlightPendingState(checkboxGroup) {
+        const labels = Array.from(checkboxGroup.querySelectorAll("label"));
+        labels.forEach((label) => label.classList.remove("pending"));
+
+        const firstPendingLabel = labels.find(
+          (label) => !label.querySelector("input").checked
+        );
+        if (firstPendingLabel) {
+          firstPendingLabel.classList.add("pending");
+        }
+      }
+
+      document.getElementById("add-job").addEventListener("click", () => {
+        const customerSelect = document.getElementById("customer-select");
+        const jobNameInput = document.getElementById("job-name");
+        const customer = customerSelect.value;
+        const jobName = jobNameInput.value.trim();
+
+        if (!customer) {
+          alert("Please select a customer.");
+          return;
+        }
+
+        if (!jobName) {
+          alert("Please enter a job name.");
+          return;
+        }
+
+        const job = {
+          id: Date.now(),
+          customer,
+          name: jobName,
+          states: Array(states.length).fill(false),
+          status: "open",
+        };
+        saveJob(job);
+        renderJob(job);
+
+        jobNameInput.value = "";
+        customerSelect.value = "";
+      });
+
+      document
+        .getElementById("generate-report")
+        .addEventListener("click", () => {
+          const transaction = db.transaction([storeName], "readonly");
+          const store = transaction.objectStore(storeName);
+          const request = store.getAll();
+
+          request.onsuccess = (event) => {
+            const jobs = event.target.result;
+            const rows = [["Customer", "Job Name", "Status", ...states]];
+
+            jobs.forEach((job) => {
+              const row = [
+                job.customer,
+                job.name,
+                job.status === "closed" ? "Closed" : "Open",
+                ...job.states.map((state) => (state ? "Completed" : "Pending")),
+              ];
+              rows.push(row);
+            });
+
+            const csvContent = rows.map((row) => row.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "job-report.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+          };
+        });
+
+      openDB();
+    </script>
+  </body>
+</html>
