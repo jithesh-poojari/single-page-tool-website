@@ -5,70 +5,186 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Job Tracker</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        line-height: 1.6;
+      /* Base Reset */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+      }
+
       h1,
       h2 {
-        color: #333;
-      }
-      .job-input {
+        color: #444;
         margin-bottom: 20px;
+        font-weight: 600;
       }
-      .job-input input,
-      .job-input select {
-        padding: 10px;
-        margin-right: 10px;
+
+      /* Header Styling */
+      h1 {
+        text-align: center;
+        font-size: 2.5em;
+        letter-spacing: 1px;
+      }
+
+      h2 {
+        font-size: 1.5em;
+        margin-top: 30px;
+        color: #007bff;
+      }
+
+      /* Job Input Form */
+      .job-input {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      .job-input select,
+      .job-input input {
+        padding: 12px;
+        font-size: 1.1em;
+        border-radius: 8px;
         border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 1em;
+        width: 200px;
+        max-width: 100%;
       }
+
       .job-input button {
-        padding: 10px 15px;
+        padding: 12px 20px;
+        font-size: 1.1em;
+        border: none;
         background-color: #007bff;
         color: white;
-        border: none;
-        border-radius: 5px;
+        border-radius: 8px;
         cursor: pointer;
+        transition: background-color 0.3s;
       }
+
       .job-input button:hover {
         background-color: #0056b3;
       }
+
+      /* Job List Section */
       .job-list {
-        margin-top: 20px;
-      }
-      .job {
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        padding: 15px;
         display: flex;
         flex-direction: column;
+        gap: 20px;
       }
+
+      .job {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+      }
+
+      .job:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      }
+
       .job h3 {
-        margin: 0;
-        font-size: 1.2em;
-        margin-bottom: 10px;
+        font-size: 1.5em;
+        color: #007bff;
       }
+
+      .job p {
+        color: #575f5f;
+        margin-bottom: 5px;
+      }
+
+      /* Checkbox Group */
       .checkbox-group {
         display: flex;
         gap: 10px;
       }
+
       .checkbox-group label {
         display: flex;
         align-items: center;
-        font-size: 0.9em;
-        gap: 5px;
+        font-size: 1em;
+        gap: 8px;
       }
+
+      .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+      }
+
       .checkbox-group label.pending {
         background-color: #ffeb3b;
-        padding: 5px;
+        padding: 6px;
         border-radius: 5px;
+        font-weight: bold;
       }
+
+      /* Pending/Completed State Styling */
+      .checkbox-group label.pending input[type="checkbox"] {
+        border-color: #f1c40f;
+      }
+
+      /* Buttons */
       .generate-report {
-        margin-top: 20px;
+        text-align: center;
+        margin-top: 30px;
+      }
+
+      .generate-report button {
+        padding: 12px 25px;
+        font-size: 1.1em;
+        background-color: #28a745;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .generate-report button:hover {
+        background-color: #218838;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+      }
+
+      .filters select,
+      .filters input {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      .filters button {
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .filters button:hover {
+        background-color: #0056b3;
       }
     </style>
   </head>
@@ -78,28 +194,86 @@
       <select id="customer-select">
         <option value="" disabled selected>Select Customer</option>
       </select>
+      <select id="job-type-select">
+        <option value="" disabled selected>Select Job Type</option>
+      </select>
       <input type="text" id="job-name" placeholder="Enter Job Name" />
       <button id="add-job">Add Job</button>
       <button id="generate-report">Generate Excel Report</button>
     </div>
+
+    <div class="filters">
+      <select id="filter-customer">
+        <option value="">All Customers</option>
+      </select>
+      <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+      </select>
+      <select id="filter-state">
+        <option value="">All States</option>
+      </select>
+      <select id="filter-job-type">
+        <option value="">All Job Types</option>
+      </select>
+      <input type="text" id="filter-job-name" placeholder="Job Name" />
+      <input type="date" id="filter-start-date" />
+      <input type="date" id="filter-end-date" />
+      <button id="apply-filters">Apply Filters</button>
+    </div>
+
     <h2>Live Jobs</h2>
     <div id="job-list" class="job-list"></div>
 
     <script>
-      const customers = ["TATA AIA", "CSB", "UJJIVAN"];
+      const customers = ["TATA AIA", "CSB", "UJJIVAN", "HDFC"];
+      const jobTypes = {
+        "TATA AIA": ["PIP", "PB", "OPOS"],
+      };
 
       function populateCustomerOptions() {
         const customerSelect = document.getElementById("customer-select");
         customers.forEach((customer) => {
           const option = document.createElement("option");
-          option.value = customer;
-          option.textContent = customer;
+          option.value = customer.toLocaleUpperCase();
+          option.textContent = customer.toLocaleUpperCase();
           customerSelect.appendChild(option);
         });
       }
 
+      function populateJobTypeOptions(customer) {
+        const jobTypeSelect = document.getElementById("job-type-select");
+
+        jobTypeSelect.innerHTML =
+          '<option value="" disabled selected>Select Job Type</option>';
+
+        if (jobTypes[customer]) {
+          jobTypes[customer].forEach((jobType) => {
+            const option = document.createElement("option");
+            option.value = jobType;
+            option.textContent = jobType;
+            jobTypeSelect.appendChild(option);
+          });
+
+          jobTypeSelect.style.display = "inline-block";
+        } else {
+          jobTypeSelect.style.display = "none";
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         populateCustomerOptions();
+
+        const customerSelect = document.getElementById("customer-select");
+        customerSelect.addEventListener("change", (e) => {
+          populateJobTypeOptions(e.target.value);
+        });
+
+        populateFilterOptions();
+        document
+          .getElementById("apply-filters")
+          .addEventListener("click", applyFilters);
       });
 
       const dbName = "JobTrackerDB";
@@ -112,6 +286,22 @@
         "Print File Received",
         "Print File Shared",
       ];
+      const dates_header = [
+        "CR Received Date",
+        "CR Shared Date",
+        "Sample Received Date",
+        "Sample Shared Date",
+        "Print File Received Date",
+        "Print File Shared Date",
+      ];
+      const times_header = [
+        "CR Received Time",
+        "CR Shared Time",
+        "Sample Received Time",
+        "Sample Shared Time",
+        "Print File Received Time",
+        "Print File Shared Time",
+      ];
       let db;
 
       const openDB = async () => {
@@ -123,24 +313,23 @@
 
         request.onsuccess = (event) => {
           db = event.target.result;
-          loadJobs();
+          loadJobs(); // Load jobs after the DB is successfully opened
         };
 
+        // This event is triggered when the database is being upgraded (or created for the first time)
         request.onupgradeneeded = (event) => {
           db = event.target.result;
-          db.createObjectStore(storeName, {
-            keyPath: "id",
-            autoIncrement: true,
-          });
+          if (!db.objectStoreNames.contains(storeName)) {
+            console.log("Creating the object store:", storeName);
+            db.createObjectStore(storeName, {
+              keyPath: "id",
+              autoIncrement: true,
+            });
+          }
         };
 
         request.onblocked = (event) => {
           console.error("Database version blocked:", event.target.error);
-        };
-
-        request.onupgradeneeded = (event) => {
-          db = event.target.result;
-          db.close();
         };
       };
 
@@ -151,8 +340,14 @@
       }
 
       function loadJobs() {
+        if (!db) {
+          console.error("Database is not initialized.");
+          return;
+        }
+
         const transaction = db.transaction([storeName], "readonly");
         const store = transaction.objectStore(storeName);
+
         const request = store.getAll();
 
         request.onsuccess = (event) => {
@@ -163,6 +358,10 @@
               renderJob(job);
             });
         };
+
+        request.onerror = (event) => {
+          console.error("Error loading jobs:", event.target.error);
+        };
       }
 
       function renderJob(job) {
@@ -171,8 +370,14 @@
         jobDiv.id = `job-${job.id}`;
 
         const title = document.createElement("h3");
-        title.textContent = `${job.customer} - ${job.name}`;
+        title.textContent = `${job.customer} - ${job.name}${
+          job.jobType ? ` (${job.jobType})` : ""
+        }`;
         jobDiv.appendChild(title);
+
+        const timestamp = document.createElement("p");
+        timestamp.textContent = new Date(job.id).toLocaleString();
+        jobDiv.appendChild(timestamp);
 
         const checkboxGroup = document.createElement("div");
         checkboxGroup.className = "checkbox-group";
@@ -204,19 +409,47 @@
             );
             const currentIndex = parseInt(e.target.dataset.index, 10);
 
+            // If the current state is checked, update only that state's date
+            if (e.target.checked) {
+              job.states[currentIndex] = true;
+              const now = new Date();
+              job.dates[currentIndex] = now.toLocaleDateString();
+              job.times[currentIndex] = now.toLocaleTimeString();
+            } else {
+              job.states[currentIndex] = false;
+              job.dates[currentIndex] = "NA";
+              job.times[currentIndex] = "NA";
+            }
+
+            // Update the states and dates based on the checkbox interaction
             checkboxes.forEach((box, idx) => {
               if (idx <= currentIndex && e.target.checked) {
+                // If the checkbox is checked and it's before the current state, mark it complete
                 box.checked = true;
                 job.states[idx] = true;
+                if (job.dates[idx] == "NA") {
+                  const now = new Date();
+                  job.dates[idx] = now.toLocaleDateString();
+                  job.times[idx] = now.toLocaleTimeString();
+                }
               } else if (idx > currentIndex && !e.target.checked) {
+                // If the checkbox is unchecked and it's after the current state, uncheck all after it
                 box.checked = false;
                 job.states[idx] = false;
+                job.dates[idx] = "NA";
+                job.times[idx] = "NA";
+              } else if (idx < currentIndex && !box.checked) {
+                // If a previous state was unchecked, reset its date
+                job.dates[idx] = "NA";
+                job.times[idx] = "NA";
               }
             });
 
+            // Save the updated job state
             saveJob(job);
             highlightPendingState(checkboxGroup);
 
+            // Check if all states are marked as complete, then prompt for closing the job
             if (job.states.every((state) => state)) {
               setTimeout(() => {
                 if (confirm(`Mark job "${job.name}" as closed?`)) {
@@ -253,12 +486,19 @@
 
       document.getElementById("add-job").addEventListener("click", () => {
         const customerSelect = document.getElementById("customer-select");
+        const jobTypeSelect = document.getElementById("job-type-select");
         const jobNameInput = document.getElementById("job-name");
         const customer = customerSelect.value;
+        const jobType = jobTypeSelect.value;
         const jobName = jobNameInput.value.trim();
 
         if (!customer) {
           alert("Please select a customer.");
+          return;
+        }
+
+        if (jobTypes[customer] && !jobType) {
+          alert("Please select a job type.");
           return;
         }
 
@@ -270,8 +510,11 @@
         const job = {
           id: Date.now(),
           customer,
+          jobType,
           name: jobName,
           states: Array(states.length).fill(false),
+          dates: Array(states.length).fill("NA"),
+          times: Array(states.length).fill("NA"),
           status: "open",
         };
         saveJob(job);
@@ -279,6 +522,8 @@
 
         jobNameInput.value = "";
         customerSelect.value = "";
+        jobTypeSelect.value = "";
+        jobTypeSelect.style.display = "none";
       });
 
       document
@@ -290,14 +535,27 @@
 
           request.onsuccess = (event) => {
             const jobs = event.target.result;
-            const rows = [["Customer", "Job Name", "Status", ...states]];
+            const rows = [
+              [
+                "Customer",
+                "Job Type",
+                "Job Name",
+                "Status",
+                ...states,
+                ...dates_header,
+                ...times_header,
+              ],
+            ];
 
             jobs.forEach((job) => {
               const row = [
                 job.customer,
+                job.jobType || "NA",
                 job.name,
                 job.status === "closed" ? "Closed" : "Open",
                 ...job.states.map((state) => (state ? "Completed" : "Pending")),
+                ...job.dates,
+                ...job.times,
               ];
               rows.push(row);
             });
@@ -313,6 +571,79 @@
             URL.revokeObjectURL(url);
           };
         });
+
+      function populateFilterOptions() {
+        const customerFilter = document.getElementById("filter-customer");
+        const jobTypeFilter = document.getElementById("filter-job-type");
+        const stateFilter = document.getElementById("filter-state");
+
+        // Populate customer filter
+        customers.forEach((customer) => {
+          const option = document.createElement("option");
+          option.value = customer.toLocaleUpperCase();
+          option.textContent = customer.toLocaleUpperCase();
+          customerFilter.appendChild(option);
+        });
+
+        // Populate job type filter
+        const allJobTypes = new Set();
+        Object.values(jobTypes).forEach((types) => {
+          types.forEach((type) => allJobTypes.add(type));
+        });
+        allJobTypes.forEach((type) => {
+          const option = document.createElement("option");
+          option.value = type;
+          option.textContent = type;
+          jobTypeFilter.appendChild(option);
+        });
+
+        // Populate state filter
+        states.forEach((state) => {
+          const option = document.createElement("option");
+          option.value = state;
+          option.textContent = state;
+          stateFilter.appendChild(option);
+        });
+      }
+
+      function applyFilters() {
+        const customerFilter = document.getElementById("filter-customer").value;
+        const statusFilter = document.getElementById("filter-status").value;
+        const stateFilter = document.getElementById("filter-state").value;
+        const jobTypeFilter = document.getElementById("filter-job-type").value;
+        const jobNameFilter = document
+          .getElementById("filter-job-name")
+          .value.toLowerCase();
+        const startDateFilter =
+          document.getElementById("filter-start-date").value;
+        const endDateFilter = document.getElementById("filter-end-date").value;
+
+        const jobList = document.getElementById("job-list");
+        jobList.innerHTML = "";
+
+        const transaction = db.transaction([storeName], "readonly");
+        const store = transaction.objectStore(storeName);
+        const request = store.getAll();
+
+        request.onsuccess = (event) => {
+          const jobs = event.target.result;
+          jobs.forEach((job) => {
+            if (
+              (!customerFilter || job.customer === customerFilter) &&
+              (!statusFilter || job.status === statusFilter) &&
+              (!stateFilter || job.states[states.indexOf(stateFilter)]) &&
+              (!jobTypeFilter || job.jobType === jobTypeFilter) &&
+              (!jobNameFilter ||
+                job.name.toLowerCase().includes(jobNameFilter)) &&
+              (!startDateFilter ||
+                new Date(job.id) >= new Date(startDateFilter)) &&
+              (!endDateFilter || new Date(job.id) <= new Date(endDateFilter))
+            ) {
+              renderJob(job);
+            }
+          });
+        };
+      }
 
       openDB();
     </script>
